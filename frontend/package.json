@@ -6,7 +6,7 @@
   "description": "Frontend de chat para el agente RAG de BimBam Buy",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
   },
