@@ -24,7 +24,7 @@ function readNumber(name: string, fallback: number): number {
 }
 
 export const apiBaseUrl: string =
-  readEnv('VITE_API_BASE_URL') ?? 'http://localhost:8000';
+  readEnv('VITE_API_BASE_URL') ?? 'http://agente.nataliadelgado.dev';
 
 export const requestTimeoutMs: number = readNumber(
   'VITE_REQUEST_TIMEOUT_MS',
