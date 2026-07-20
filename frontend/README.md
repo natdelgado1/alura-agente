@@ -25,6 +25,15 @@ Inspirada en Platzi, ajustada a BimBam Buy:
 - Mucho contraste, microinteracciones sutiles (fade-up en burbujas, dots
   animados para el estado "escribiendo", hover/active en botones)
 
+## Screenshots
+
+| Estado inicial | Conversación | Mobile |
+| :---: | :---: | :---: |
+| ![Chat vacío](./screenshots/01-chat-empty-state.png) | ![Conversación](./screenshots/02-chat-conversation.png) | ![Mobile](./screenshots/03-mobile-view.png) |
+| Pantalla inicial con las 4 preguntas sugeridas | Burbujas del usuario y del asistente | Vista responsive (iPhone 14) |
+
+Más capturas y convenciones: ver [`screenshots/README.md`](./screenshots/README.md).
+
 ## Estructura
 
 ```
@@ -52,6 +61,7 @@ frontend/
 │   ├── main.tsx
 │   └── index.css
 ├── .dockerignore
+│   ├── .dockerignore
 ├── .env.example
 ├── .gitignore
 ├── Dockerfile
@@ -62,7 +72,9 @@ frontend/
 ├── tailwind.config.js
 ├── tsconfig.json
 ├── tsconfig.node.json
-└── vite.config.ts
+├── vite.config.ts
+└── screenshots/             # Capturas para documentación (ver screenshots/README.md)
+    └── README.md
 ```
 
 ### Separación UI ↔ lógica

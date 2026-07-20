@@ -75,4 +75,11 @@ curl -X POST https://agente.nataliadelgado.dev/ask \
   -d '{"query": "¿Cuál es la política de reembolsos?"}'
 ```
 
-![Deploy funcionando](ruta/a/tu/captura.png)
+## Screenshots
+
+| Swagger UI | Health check | Endpoint `/ask` |
+| :---: | :---: | :---: |
+| ![Swagger](./screenshots/01-swagger-ui.png) | ![Health](./screenshots/02-health-check.png) | ![Ask](./screenshots/03-ask-endpoint.png) |
+| Docs interactiva en `/docs` | Endpoint `/` respondiendo JSON | Request/response exitoso en `/ask` |
+
+Más capturas (logs de Dokploy, deploys, etc.) y convenciones: ver [`screenshots/README.md`](./screenshots/README.md).

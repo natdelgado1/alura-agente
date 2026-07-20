@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
@@ -57,7 +59,30 @@ export default {
         'typing-dot': 'typing-dot 1.2s ease-in-out infinite',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
       },
+      // Personalización del plugin Typography (prose) para que combine con la
+      // paleta oscura + acento verde de BimBam Buy.
+      typography: ({ theme }) => ({
+        invert: {
+          css: {
+            '--tw-prose-body': theme('colors.ink.300'),
+            '--tw-prose-headings': theme('colors.white'),
+            '--tw-prose-lead': theme('colors.ink.300'),
+            '--tw-prose-links': theme('colors.accent.400'),
+            '--tw-prose-bold': theme('colors.white'),
+            '--tw-prose-counters': theme('colors.ink.400'),
+            '--tw-prose-bullets': theme('colors.accent.500'),
+            '--tw-prose-hr': theme('colors.ink.700'),
+            '--tw-prose-quotes': theme('colors.ink.200'),
+            '--tw-prose-quote-borders': theme('colors.accent.500'),
+            '--tw-prose-code': theme('colors.white'),
+            '--tw-prose-pre-code': theme('colors.ink.200'),
+            '--tw-prose-pre-bg': theme('colors.ink.900'),
+            '--tw-prose-th-borders': theme('colors.ink.700'),
+            '--tw-prose-td-borders': theme('colors.ink.700'),
+          },
+        },
+      }),
     },
   },
-  plugins: [],
+  plugins: [typography],
 };

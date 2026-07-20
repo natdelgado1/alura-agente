@@ -1,5 +1,6 @@
 import type { ChatMessage } from '../types/chat';
 import { BotAvatarIcon, UserAvatarIcon } from './ChatIcons';
+import { MarkdownContent } from './MarkdownContent';
 import { TypingIndicator } from './TypingIndicator';
 
 interface MessageBubbleProps {
@@ -8,18 +9,27 @@ interface MessageBubbleProps {
 
 /**
  * Burbuja individual del chat.
- * Renderiza el contenido como texto plano (React escapa automáticamente) — nunca
- * `dangerouslySetInnerHTML` — para prevenir XSS si el backend devolviera HTML.
+ *
+ * - Mensajes del **asistente** se renderizan como Markdown (lo que devuelve el
+ *   backend puede tener `**negrita**`, listas, títulos, etc.). El sanitizador
+ *   evita XSS si el backend devolviera HTML malicioso.
+ * - Mensajes del **usuario** se renderizan como texto plano (lo que escribe
+ *   nunca debería tener markdown ni HTML).
  */
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const isTyping = message.status === 'sending' && message.content.length === 0;
 
   return (
     <article
       className={`flex w-full animate-fade-up ${isUser ? 'justify-end' : 'justify-start'}`}
       aria-label={isUser ? 'Tu mensaje' : 'Respuesta del asistente'}
     >
-      <div className={`flex max-w-[85%] items-end gap-2 sm:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+      <div
+        className={`flex max-w-[85%] items-end gap-2 sm:max-w-[75%] ${
+          isUser ? 'flex-row-reverse' : 'flex-row'
+        }`}
+      >
         <div
           className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ring-1 ${
             isUser
@@ -32,16 +42,18 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         </div>
 
         <div
-          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-bubble ${
+          className={`rounded-2xl px-4 py-2.5 text-sm shadow-bubble ${
             isUser
               ? 'rounded-br-md bg-accent-600 text-white'
               : 'rounded-bl-md bg-ink-800 text-ink-200 ring-1 ring-ink-700'
           }`}
         >
-          {message.status === 'sending' && message.content.length === 0 ? (
+          {isTyping ? (
             <TypingIndicator />
+          ) : isUser ? (
+            <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
           ) : (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <MarkdownContent content={message.content} />
           )}
         </div>
       </div>

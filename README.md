@@ -16,6 +16,15 @@ en Dokploy.
 - **Backend (Swagger):** <https://agente.nataliadelgado.dev/docs>
 - **Frontend:** _(completar cuando se deploye)_
 
+## Screenshots
+
+| Frontend | Backend |
+| :---: | :---: |
+| ![Chat vacío](./frontend/screenshots/01-chat-empty-state.png) | ![Swagger UI](./backend/screenshots/01-swagger-ui.png) |
+| ![Conversación](./frontend/screenshots/02-chat-conversation.png) | ![Endpoint /ask](./backend/screenshots/03-ask-endpoint.png) |
+
+Capturas detalladas y convenciones: [`frontend/screenshots/`](./frontend/screenshots/) y [`backend/screenshots/`](./backend/screenshots/).
+
 ## Despliegue en Dokploy
 
 Cada servicio se construye desde el `Dockerfile` de su carpeta:
