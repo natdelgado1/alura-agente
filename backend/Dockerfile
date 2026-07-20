@@ -9,4 +9,6 @@ COPY . .
 
 EXPOSE 8347
 
-CMD ["sh", "-c", "cd src && uvicorn app:app --host 0.0.0.0 --port 8347"]
+# JSON exec form (sin shell) para ser más portable y predecible.
+# `--app-dir src` evita el `cd src` del CMD anterior.
+CMD ["uvicorn", "--app-dir", "src", "app:app", "--host", "0.0.0.0", "--port", "8347"]
