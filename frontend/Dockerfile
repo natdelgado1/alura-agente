@@ -17,7 +17,7 @@ COPY . .
 
 # ⚠️ IMPORTANTE: Vite resuelve las variables VITE_* en BUILD time.
 # Si querés apuntar a otro backend, cambiás acá o usás --build-arg al construir.
-ARG VITE_API_BASE_URL=http://localhost:8000
+ARG VITE_API_BASE_URL=https://agente.nataliadelgado.dev
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ARG VITE_REQUEST_TIMEOUT_MS=30000
 ENV VITE_REQUEST_TIMEOUT_MS=$VITE_REQUEST_TIMEOUT_MS
