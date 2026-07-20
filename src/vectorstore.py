@@ -1,38 +1,48 @@
 """
-Fase 2 (parte 1): Embeddings Modulares + vectorstore.
+Fase 2: Construcción de Vectorstore con procesamiento por lotes (batching).
+Implementa pausas automáticas para evitar límites de API (Rate Limits).
 """
-import os
+import time
 from langchain_community.vectorstores import FAISS
-
 from config import obtener_embeddings
 
 INDEX_PATH = "data/faiss_index"
 
-def construir_vectorstore(chunks):
+def construir_vectorstore(chunks, batch_size: int = 20, pausa: int = 30):
     """
-    Constructs a FAISS vectorstore from document chunks and persists it to disk.
+    Construye el índice FAISS por lotes para respetar los límites de la API.
 
     Args:
-        chunks (List[Document]): A list of LangChain Document objects representing
-                                 the text chunks to be embedded and indexed.
-
-    Returns:
-        FAISS: The constructed FAISS vectorstore instance.
+        chunks (list): Lista de documentos procesados.
+        batch_size (int): Fragmentos por petición.
+        pausa (int): Segundos de espera entre cada lote.
     """
     embeddings = obtener_embeddings()
+    vectorstore = None
+    total = len(chunks)
 
-    vectorstore = FAISS.from_documents(chunks, embeddings)
+    for i in range(0, total, batch_size):
+        lote = chunks[i:i + batch_size]
+        print(f"⏳ Procesando lote {i // batch_size + 1} ({i}-{min(i + batch_size, total)} de {total})...")
+
+        if vectorstore is None:
+            # Crea el índice inicialmente
+            vectorstore = FAISS.from_documents(lote, embeddings)
+        else:
+            # Añade al índice existente
+            vectorstore.add_documents(lote)
+
+        # Pausa estratégica si faltan documentos por procesar
+        if i + batch_size < total:
+            print(f"💤 Esperando {pausa}s para proteger cuota de API...")
+            time.sleep(pausa)
 
     vectorstore.save_local(INDEX_PATH)
+    print(f"✅ Vectorstore guardado en {INDEX_PATH}")
     return vectorstore
 
 def cargar_vectorstore():
-    """
-    Loads an existing FAISS vectorstore from the local disk.
-
-    Returns:
-        FAISS: The loaded FAISS vectorstore instance.
-    """
+    """Carga el vectorstore desde disco."""
     embeddings = obtener_embeddings()
     return FAISS.load_local(
         INDEX_PATH, embeddings, allow_dangerous_deserialization=True
@@ -40,6 +50,5 @@ def cargar_vectorstore():
 
 if __name__ == "__main__":
     from loader import cargar_y_trocear
-
     chunks = cargar_y_trocear()
     construir_vectorstore(chunks)

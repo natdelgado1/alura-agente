@@ -1,5 +1,5 @@
 """
-Fase 3: API que expone el agente (esto es lo que se sube a OCI).
+Fase 3: API que expone el agente
 """
 from fastapi import FastAPI
 from pydantic import BaseModel
