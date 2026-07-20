@@ -9,6 +9,18 @@ from agent import construir_agente
 
 app = FastAPI(title="Alura Agente - BimBam Buy")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://chat.nataliadelgado.dev",
+        "http://localhost:5173",        # dev local del frontend
+    ],
+    allow_credentials=False,
+    allow_methods=["POST"],
+    allow_headers=["Content-Type"],
+)
+
+
 vectorstore = cargar_vectorstore()
 agente = construir_agente(vectorstore)
 

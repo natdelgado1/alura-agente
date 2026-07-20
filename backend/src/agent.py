@@ -47,14 +47,15 @@ def preguntar(agente, pregunta: str):
     print("\n🤖 RESPUESTA DE GEMINI:")
     print(resultado["answer"])
     print("-----------------")
-
+    """
     print("\n📄 DOCUMENTOS DE ORIGEN (CONTEXTO RECUPERADO):")
     for i, doc in enumerate(resultado["context"], 1):
         print(f"\n--- Documento {i} ---")
         print(f"Contenido: {doc.page_content}")
         print(f"Metadatos: {doc.metadata}")
+    """
+    return resultado["answer"]
 
-    return resultado
 
 
 if __name__ == "__main__":
