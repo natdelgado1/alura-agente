@@ -27,5 +27,5 @@ def responder(payload: Pregunta):
     resultado = agente.invoke({"input": payload.query})
     return {
         "respuesta": resultado["answer"],
-        "fuentes": [doc.metadata for doc in resultado["context"]],
+        #"fuentes": [doc.metadata for doc in resultado["context"]],
     }

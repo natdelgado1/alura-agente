@@ -50,6 +50,14 @@ PDFs (data/) -> loader.py (carga + split en chunks)
 - "¿Qué métodos de pago aceptan?"
 - "¿Cómo hago válida la garantía de un producto?"
 
-## Deploy
+## Deploy (Render)
 
-[Pendiente]
+1. Generá el índice localmente antes de subir (`cd src && python vectorstore.py`) — el índice de `data/faiss_index/` se sube al repo para que Render no tenga que regenerarlo en cada build.
+2. Subí el repo a GitHub.
+3. En [render.com](https://render.com): **New → Web Service** → conectá el repo.
+4. Build command: `pip install -r requirements.txt`
+5. Start command: `cd src && uvicorn app:app --host 0.0.0.0 --port $PORT`
+6. Agregá la variable de entorno `GOOGLE_API_KEY` en la sección Environment.
+7. Deploy. Render te da una URL pública tipo `https://alura-agente.onrender.com`.
+
+**Demo en línea:** [Pendiente: pegar URL de Render acá]
