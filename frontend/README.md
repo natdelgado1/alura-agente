@@ -1,220 +1,119 @@
-# BimBam Buy · Chat Frontend
+# Frontend · BimBam Buy Chat
 
-Interfaz de chat para el agente RAG de BimBam Buy. Permite a usuarios finales
-hacer preguntas en lenguaje natural sobre envíos, reembolsos, pagos y garantía.
+UI de chat para el agente RAG de BimBam Buy. Permite a usuarios finales hacer
+preguntas en lenguaje natural sobre envíos, reembolsos, pagos y garantía.
 
-> Este proyecto es **independiente** del backend (carpeta `../backend/` del repo).
-> Solo consume el endpoint `POST /ask` del agente.
+> Este proyecto es **independiente** del backend (`../backend/`). Solo consume el
+> endpoint `POST /ask`. Para instrucciones de instalación, dev local y deploy,
+> ver el [`README.md` raíz](../README.md).
 
 ---
 
-## Stack
-
-- **React 18** + **TypeScript** (strict mode, sin `any`)
-- **Vite 5** como bundler / dev server
-- **Tailwind CSS 3** con clases utilitarias base (sin compilador custom)
-- Sin librerías UI externas — los íconos son SVG inline
-
-## Identidad visual
-
-Inspirada en Platzi, ajustada a BimBam Buy:
-
-- Fondo: azul marino casi negro (`#0a0f1e` → `#060912`)
-- Acento: verde vibrante (`#22c55e`) para CTAs y estados activos
-- Tipografía: Inter (sans-serif geométrica)
-- Mucho contraste, microinteracciones sutiles (fade-up en burbujas, dots
-  animados para el estado "escribiendo", hover/active en botones)
-
-## Screenshots
-
-| Estado inicial | Conversación | Mobile |
-| :---: | :---: | :---: |
-| ![Chat vacío](./screenshots/01-chat-empty-state.png) | ![Conversación](./screenshots/02-chat-conversation.png) | ![Mobile](./screenshots/03-mobile-view.png) |
-| Pantalla inicial con las 4 preguntas sugeridas | Burbujas del usuario y del asistente | Vista responsive (iPhone 14) |
-
-Más capturas y convenciones: ver [`screenshots/README.md`](./screenshots/README.md).
-
-## Estructura
+## 🧠 Arquitectura
 
 ```
-frontend/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/        # UI presentacional (MessageBubble, InputBar, …)
-│   │   ├── ChatHeader.tsx
-│   │   ├── ChatIcons.tsx
-│   │   ├── ChatWindow.tsx
-│   │   ├── EmptyState.tsx
-│   │   ├── ErrorBanner.tsx
-│   │   ├── InputBar.tsx
-│   │   ├── MessageBubble.tsx
-│   │   └── TypingIndicator.tsx
-│   ├── hooks/             # Lógica del chat y de red
-│   │   ├── useApiRequest.ts
-│   │   └── useChat.ts
-│   ├── types/             # Tipos compartidos del request/response
-│   │   └── chat.ts
-│   ├── lib/               # Utilidades (env, etc.)
-│   │   └── env.ts
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── .dockerignore
-│   ├── .dockerignore
-├── .env.example
-├── .gitignore
-├── Dockerfile
-├── index.html
-├── nginx.conf
-├── package.json
-├── postcss.config.js
-├── tailwind.config.js
-├── tsconfig.json
-├── tsconfig.node.json
-├── vite.config.ts
-└── screenshots/             # Capturas para documentación (ver screenshots/README.md)
-    └── README.md
+App.tsx                     # Shell mínimo: provee el hook y renderiza ChatWindow
+└── ChatWindow              # Layout del chat (header + lista + input + errores)
+    ├── ChatHeader          # Logo, branding, botón "nueva conversación"
+    ├── ErrorBanner         # Banner de error con botón de cerrar
+    ├── MessageBubble       # Burbuja (user/assistant) + estados
+    │   └── MarkdownContent # Render seguro de markdown en respuestas
+    ├── TypingIndicator     # Animación "escribiendo..." (3 dots)
+    ├── EmptyState          # Estado inicial + 4 preguntas sugeridas
+    └── InputBar            # Textarea + envío (Enter / Shift+Enter)
+
+hooks/
+├── useChat                 # Orquestador: historial + validación + estado
+└── useApiRequest           # Cliente HTTP: fetch, timeout, parseo, errores
+
+types/
+└── chat                    # Contrato compartido con el backend + tipos UI
+
+lib/
+└── env                     # Helpers de variables VITE_*
 ```
 
-### Separación UI ↔ lógica
+### Capas y responsabilidades
 
 | Capa            | Responsabilidad                                                                 |
 | --------------- | ------------------------------------------------------------------------------- |
-| `components/`   | Solo presentación. Reciben props, no manejan estado global ni hacen fetch.       |
+| `components/`   | Solo presentación. Reciben props, no manejan estado global ni hacen fetch.     |
 | `hooks/`        | Toda la lógica: `useChat` orquesta mensajes; `useApiRequest` encapsula el HTTP. |
 | `types/`        | Contrato del request/response del backend, compartido entre hooks y UI.         |
 | `lib/`          | Helpers puros (acceso a variables de entorno).                                   |
 
-## Variables de entorno
+Esta separación permite:
+- **Testear `useChat` sin renderizar UI** (lógica pura).
+- **Reutilizar `useApiRequest`** si mañana agregamos otro endpoint.
+- **Cambiar estilos sin tocar lógica** y viceversa.
 
-Copiá `.env.example` a `.env` y ajustá los valores:
+### Flujo de un mensaje
+
+```
+InputBar (Enter / click)
+        │
+        ▼
+useChat.sendMessage(raw)
+        │ ① validateQuery  → null si OK, mensaje si no
+        │ ② append user message (status: sent)
+        │ ③ append assistant placeholder (status: sending)
+        ▼
+useApiRequest.ask(query)
+        │  POST {VITE_API_BASE_URL}/ask
+        │  timeout: VITE_REQUEST_TIMEOUT_MS (default 30 s)
+        ▼
+backend (FastAPI) → Gemini
+        │
+        ▼
+updateLastAssistantMessage(content, status: sent)
+        │
+        ▼ (si error)
+setLocalError + burbuja con status: error + banner
+```
+
+### Decisiones técnicas
+
+| Decisión | Por qué |
+| --- | --- |
+| **TypeScript strict, sin `any`** | El frontend es la "puerta de entrada" del contrato con el backend. Tipos estrictos evitan surprises en runtime. |
+| **Sin librería UI externa** | El catálogo de componentes es chico (Header, Input, Bubble, Banner). Hand-rolled = menos bundle, menos vendor lock-in. |
+| **Tailwind sin `@apply` custom** | Las clases utilitarias base alcanzan; mantener el compilador chico reduce la superficie de config. |
+| **Hooks separados** (`useChat` / `useApiRequest`) | Single-responsibility: testing, razonamiento y futura reutilización. |
+| **Errores genéricos al usuario, detalle a consola** | No exponer status codes ni payloads. La consola mantiene el rastro para devs. |
+| **Placeholder optimista** ("sending") | Da feedback inmediato y permite reusar la misma animación para el typing indicator. |
+| **Validación de input duplicada** (UX + backend) | El backend valida (422) pero la UX previene round-trips innecesarios. |
+| **Markdown seguro** (`MarkdownContent`) | Las respuestas del LLM pueden traer formato. Sin `dangerouslySetInnerHTML`: se sanitiza antes de renderizar. |
+| **Sin estado global** (Redux/Zustand) | El alcance del chat es chico; `useChat` ya encapsula lo necesario. |
+
+## 🎨 Sistema de diseño
+
+Inspirado en Platzi, ajustado a BimBam Buy:
+
+- **Fondo**: azul marino casi negro (`#0a0f1e` → `#060912`)
+- **Acento**: verde vibrante (`#22c55e`) para CTAs y estados activos
+- **Tipografía**: Inter (sans-serif geométrica)
+- **Movimiento**: fade-up en burbujas, dots animados para "escribiendo", hover/active en botones
+
+Los tokens viven en `tailwind.config.js` y se consumen vía `bg-ink-900`,
+`text-accent-500`, etc.
+
+## 🔐 Variables de entorno
+
+Copiá `.env.example` a `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable                 | Descripción                                  | Default                  |
-| ------------------------ | -------------------------------------------- | ------------------------ |
-| `VITE_API_BASE_URL`      | URL base del backend (sin slash final).      | `http://localhost:8000`  |
-| `VITE_REQUEST_TIMEOUT_MS`| Timeout del request en milisegundos.         | `30000`                  |
+| Variable                  | Descripción                                  | Default                  |
+| ------------------------- | -------------------------------------------- | ------------------------ |
+| `VITE_API_BASE_URL`       | URL base del backend (sin slash final).      | `http://localhost:8000`  |
+| `VITE_REQUEST_TIMEOUT_MS` | Timeout del request en milisegundos.         | `30000`                  |
 
 > ⚠️ Vite solo expone al cliente las variables que arrancan con `VITE_`. No
 > pongas secretos acá — todo lo que esté acá será visible en el bundle final.
 
-## Instalación y desarrollo
-
-```bash
-# 1. Instalar dependencias
-npm install
-
-# 2. Configurar variables de entorno
-cp .env.example .env
-# (editá .env si necesitás apuntar a otro backend)
-
-# 3. Levantar el dev server
-npm run dev
-```
-
-Por defecto corre en <http://localhost:5173>.
-
-## Build de producción
-
-```bash
-npm run build      # genera /dist
-npm run preview    # sirve el build localmente para verificar
-```
-
-## Deploy con Docker
-
-El proyecto incluye un `Dockerfile` **multi-stage** (Node 20 para build,
-Nginx 1.27 alpine para servir estáticos) listo para subir a Dokploy o
-cualquier orquestador.
-
-### ⚠️ Variables de entorno en BUILD time
-
-Vite resuelve las variables `VITE_*` **al construir**, no al iniciar el
-contenedor. Si cambia la URL del backend hay que rebuildear la imagen (no
-alcanza con reiniciar).
-
-Por eso se exponen como `ARG` en el `Dockerfile` y se inyectan con
-`--build-arg`:
-
-```bash
-# Build local apuntando al backend desplegado
-docker build \
-  --build-arg VITE_API_BASE_URL=https://agente.nataliadelgado.dev \
-  -t bimbambuy-chat-frontend .
-
-# Correr el contenedor
-docker run --rm -p 8080:4173 bimbambuy-chat-frontend
-# → http://localhost:8080
-```
-
-### En Dokploy
-
-1. Crear un nuevo servicio desde este repo (o un sub-path) apuntando al
-   `Dockerfile` dentro de `frontend/`.
-2. Configurar las **build args** en el panel (no en "env vars" runtime):
-   - `VITE_API_BASE_URL` = URL pública del backend
-   - `VITE_REQUEST_TIMEOUT_MS` (opcional) = `30000`
-3. Exponer el container port **4173** (puerto interno del Nginx).
-4. Configurar el dominio/subdominio (`chat.bimbambuy.com` o similar).
-
-### Lo que hace el Dockerfile
-
-| Stage   | Imagen base        | Trabajo                                                                 |
-| ------- | ------------------ | ----------------------------------------------------------------------- |
-| builder | `node:20-alpine`   | `npm ci` (o `npm install` si no hay lockfile) → `npm run build`        |
-| runner  | `nginx:1.27-alpine`| Copia `dist/` + `nginx.conf` con SPA fallback, gzip y headers seguros   |
-
-### Puerto interno del contenedor
-
-El contenedor Nginx escucha en **`4173`** (puerto alto no estándar, default de
-`vite preview`). Esto evita conflictos con otros proyectos que puedan estar
-corriendo en la misma máquina (que suelen usar `80`, `3000`, `8080`, etc.).
-
-Dokploy se ocupa del mapeo: el tráfico HTTPS público (`443`) → reverse proxy
-interno → `4173` del contenedor. Vos solo tenés que poner **`4173`** como
-container port al configurar el service.
-
-### Lo que hace `nginx.conf`
-
-- **SPA fallback**: cualquier ruta no encontrada cae a `index.html`
-- **Cache agresivo** para `/assets/*` (Vite los hashea, son seguros 1 año)
-- **`index.html` siempre `no-cache`** para que los deploys se vean sin hard reload
-- **Headers de seguridad**: `X-Frame-Options`, `X-Content-Type-Options`,
-  `Referrer-Policy`, `Permissions-Policy`
-- **Gzip** para texto/JS/CSS/SVG
-- **Bloqueo** de archivos ocultos (`.env`, `.git`, etc.)
-
-## ⚠️ CORS: no te olvides del backend
-
-Si el frontend y el backend quedan en **dominios distintos**
-(lo más probable, ej. `chat.bimbambuy.com` → `agente.nataliadelgado.dev`),
-el navegador va a bloquear las requests por CORS. Hay que habilitarlo en
-el backend (`src/app.py`):
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://chat.bimbambuy.com",
-        "http://localhost:5173",  # dev local
-    ],
-    allow_credentials=False,
-    allow_methods=["POST"],
-    allow_headers=["Content-Type"],
-)
-```
-
-Alternativas si querés evitar CORS: proxy reverso de Dokploy para que ambos
-compartan un dominio, o un `location /api/` en este nginx que haga
-`proxy_pass` al backend (implica que estén en la misma red Docker).
-
-## Contrato con el backend
+## 📡 Contrato con el backend
 
 **Endpoint:** `POST {VITE_API_BASE_URL}/ask`
 
@@ -231,13 +130,13 @@ compartan un dominio, o un `location /api/` en este nginx que haga
 > El backend puede devolver campos extra (`fuentes`, etc.); el frontend los
 > ignora silenciosamente porque está tipado contra `AskResponse`.
 
-## Seguridad
+## 🛡 Seguridad
 
-- **XSS**: el contenido del backend se renderiza como texto plano con
-  `{message.content}`. React escapa automáticamente; nunca usamos
+- **XSS**: el contenido del backend se renderiza vía `MarkdownContent` con
+  sanitización. React escapa automáticamente el texto plano; nunca usamos
   `dangerouslySetInnerHTML`.
-- **Validación de input**: el input se trimea, se valida que no esté vacío
-  y se acota a 500 caracteres antes de enviarse (en `useChat` y en `InputBar`).
+- **Validación de input**: el input se trimea, se valida que no esté vacío y
+  se acota a 500 caracteres antes de enviarse (en `useChat`).
 - **Errores**: el frontend muestra mensajes genéricos
   ("No pudimos conectar con el asistente…") y loguea el detalle técnico a la
   consola para devs, sin exponer status codes ni payloads.
@@ -246,18 +145,28 @@ compartan un dominio, o un `location /api/` en este nginx que haga
 - **URL sensible**: la URL del backend vive en `VITE_API_BASE_URL`, nunca
   hardcodeada en componentes.
 
-## Accesibilidad
+## ♿ Accesibilidad
 
 - Cada burbuja tiene un `aria-label` descriptivo.
 - El indicador "escribiendo" usa `role="status"` con `aria-label`.
 - El botón de cerrar el banner de error también está etiquetado.
 - El input tiene `<label>` sr-only y atajos documentados (`Enter` / `Shift+Enter`).
-- `prefers-reduced-motion` puede desactivarse si lo necesitás: las
-  animaciones usan duraciones cortas y opacas — no son invasivas.
+- `prefers-reduced-motion` puede desactivarse: las animaciones usan duraciones
+  cortas y opacas — no son invasivas.
 
-## Roadmap (ideas para iterar)
+## 📸 Screenshots
 
-- Soporte de markdown seguro en respuestas (`react-markdown` con `rehype-sanitize`).
+| Estado inicial | Conversación | Mobile |
+| :---: | :---: | :---: |
+| ![Chat vacío](./screenshots/01-chat-empty-state.png) | ![Conversación](./screenshots/02-chat-conversation.png) | ![Mobile](./screenshots/03-mobile-view.png) |
+| Pantalla inicial con las 4 preguntas sugeridas | Burbujas del usuario y del asistente | Vista responsive (iPhone 14) |
+
+Más capturas y convenciones: ver [`screenshots/README.md`](./screenshots/README.md).
+
+## 🛣 Roadmap (ideas para iterar)
+
 - Streaming de respuestas con `ReadableStream` para perceived performance.
 - Persistencia del historial en `localStorage`.
 - Reintento automático del último mensaje ante error transitorio.
+- Feedback 👍 / 👎 por respuesta (para futuro fine-tuning).
+- Modo claro / oscuro.
