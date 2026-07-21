@@ -14,7 +14,7 @@ en Dokploy.
 ## Demo
 
 - **Backend (Swagger):** <https://agente.nataliadelgado.dev/docs>
-- **Frontend:** _(completar cuando se deploye)_
+- **Frontend:** <https://chat.nataliadelgado.dev/>
 
 ## Screenshots
 
@@ -32,7 +32,7 @@ Cada servicio se construye desde el `Dockerfile` de su carpeta:
 | Servicio | Path del Dockerfile (build context) | URL pública sugerida |
 | --- | --- | --- |
 | Backend | `backend/Dockerfile` | `https://agente.nataliadelgado.dev` |
-| Frontend | `frontend/Dockerfile` | `https://chat.bimbambuy.com` |
+| Frontend | `frontend/Dockerfile` | `https://chat.nataliadelgado.dev/` |
 
 > 📖 Para instrucciones detalladas de cada servicio (env vars, build args, troubleshooting),
 > ver el `README.md` del proyecto correspondiente.
